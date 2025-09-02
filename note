@@ -1,0 +1,1 @@
+bcryptjs cloudinary cookie-parser cors dotenv express helmet jsonwebtoken mongoose morgan multer nodemon
