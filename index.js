@@ -32,6 +32,6 @@ app.get("/",(request,response)=>{
 
 connectDB().then(()=>{
     app.listen(process.env.PORT,()=>{
-        console.log("Server is running " + process.env.PORT)
+        console.log("Server is running" + process.env.PORT)
     })
 })
