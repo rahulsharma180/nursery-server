@@ -26,12 +26,12 @@ crossOriginResourcePolicy: false
 
 app.get("/",(request,response)=>{
     response.json({
-        message: "Server is running" + process.env.PORT
+        message: "Server is running " + process.env.PORT
     })
 })
 
 connectDB().then(()=>{
     app.listen(process.env.PORT,()=>{
-        console.log("Server is running" + process.env.PORT)
+        console.log("Server is running " + process.env.PORT)
     })
 })
