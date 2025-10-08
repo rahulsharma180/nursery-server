@@ -8,7 +8,7 @@ const userSchema = mongoose.Schema(
     },
     email: {
       type: String,
-      required: [true, 'Provide name'],
+      required: [true, 'Provide Email'],
       unique: true,
     },
 
@@ -27,10 +27,14 @@ const userSchema = mongoose.Schema(
       default: null,
     },
 
-    //  refersh_token :{
-    //     type : string,
-    //      default: ""
-    // },
+    access_token: {
+        type: String,
+        default: ''
+    },
+    refresh_token: {
+        type: String,
+        default: ""
+    },
 
     verify_email: {
       type: Boolean,
@@ -75,6 +79,14 @@ const userSchema = mongoose.Schema(
         type: Date,
         default: null
     },
+    //  forgot_password_otp: {
+    //     type: String,
+    //     default: null
+    // },
+    // forgot_password_expiry: {
+    //     type: Date,
+    //     default: null
+    // },
     role: {
       type: String,
 
