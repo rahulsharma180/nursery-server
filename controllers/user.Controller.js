@@ -8,6 +8,20 @@ import { decrypt } from "dotenv";
 import generateAccessToken from "../utils/generateAccessToken.js";
 import generateRefreshToken from "../utils/generateRefreshToken.js";
 
+import { v2 as cloudinary } from 'cloudinary';
+import fs from 'fs';
+
+
+
+// Configuration
+cloudinary.config({
+    cloud_name: process.env.cloudinary_Config_Cloud_Name,
+    api_key: process.env.cloudinary_Config_api_key,
+    api_secret: process.env.cloudinary_Config_api_secret,
+    secure: true,
+});
+
+
 //register user
 const registerUserController = async (req, res) => {
   let { name, password, email } = req.body;
@@ -221,7 +235,7 @@ export async function loginController(req, res) {
       });
     }
 
-    const checkPassword = await bcrypt.compare(password, user.password);
+    const checkPassword = await bcryptjs.compare(password, user.password);
     if (!checkPassword) {
       return res.status(401).json({
         error: true,
@@ -233,7 +247,7 @@ export async function loginController(req, res) {
     const accessToken = await generateAccessToken(user._id);
     const refreshToken = await generateRefreshToken(user._id);
 
-    await UserModel.findByIdAndUpdate(user._id, {
+    await userModel.findByIdAndUpdate(user._id, {
       last_login_date: new Date(),
     });
 
@@ -282,7 +296,7 @@ export async function logoutController(req, res) {
         res.clearCookie('accessToken', cookiesOption);
         res.clearCookie('refreshToken', cookiesOption);
 
-        const removerefreshToken = await UserModel.findByIdAndUpdate(userid, {
+        const removerefreshToken = await userModel.findByIdAndUpdate(userid, {
             refresh_token: ''
         });
 
@@ -299,3 +313,140 @@ export async function logoutController(req, res) {
         });
     }
 }
+
+
+
+
+// //Image upload
+// var imagesArr = [];
+export async function userAvatarController(request, response) {
+    try {
+            
+      //Image upload
+      let imagesArr = [];
+        const userId = request.userId;  //auth middleware Only logged-in user updates their avatar
+        const images = request.files; // multiple file uploads
+
+        const user = await userModel.findOne({ _id: userId });
+        if (!user) {
+            return response.status(404).json({
+                message: 'User not found',
+                error: true,
+                success: false
+            });
+        }
+
+        // Delete old avatar from Cloudinary if exists
+        if (user.avatar) {
+            const urlArr = user.avatar.split('/');  // array bn rh h
+            const image = urlArr[urlArr.length - 1]; // array mai se last item nikal rh h
+            const imageName = image.split('.')[0]; //file extension remove kar rahe hain
+            if (imageName) {
+                await cloudinary.uploader.destroy(imageName); //uploaded file ko delete karna
+            }
+        }
+              // 🔄 TL;DR Deep Version
+
+              // 1. URL se last part nikalte hain → file name with extension
+
+              // 2. Extension hata ke public ID nikalte hain
+
+              // 3. Safety check → agar valid hai, delete karte hain Cloudinary se
+
+        const options = {
+            use_filename: true,
+            unique_filename: false,
+            overwrite: false
+        };
+
+        // Upload new images
+        for (let i = 0; i < (images?.length || 0); i++) {
+            const uploadResult = await cloudinary.uploader.upload(images[i].path, options);
+            imagesArr.push(uploadResult.secure_url);
+
+            // Delete file from local uploads folder
+            fs.unlinkSync(`uploads/${images[i].filename}`);
+            console.log(request.files[i].filename)
+        }
+
+
+            // // bad way of 
+
+            //         for (let i = 0 ; i < images?.length; i++) {
+            // const img = await cloudinary.uploader.upload(
+            // images[i].path,
+            // options,
+            // function (error, result) {
+            // console.log(result)
+          
+            // imagesArr.push(result.secure_url);
+            // fs.unlinkSync(`uploads/${request.files[i].filename}`);
+            // console.log(request.files[i].filename)
+            // }
+            // );
+            // }
+
+
+
+        // Update user avatar
+        user.avatar = imagesArr[0] || user.avatar;
+        await user.save();
+
+        return response.status(200).json({
+            _id: userId,
+            avatar: user.avatar
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || error,
+            error: true,
+            success: false
+        });
+    }
+}
+
+//  best way to update avtar bs delete old data or user check lgna h bs
+// //upload user avatar
+// export async  function uploadAvatar(request,response){
+//     try {
+//         const userId = request.userId // auth middlware
+//         const image = request.file  // multer middleware
+
+                                                                  //       const user = await UserModel.findById(userId);
+//  ye add krna tha bs
+                                                                  // if (!user) {
+                                                                  //   return res.status(404).json({ message: "User not found", error: true });
+                                                                  // }
+
+                                                                  // // Delete old avatar from Cloudinary
+                                                                  // if (user.avatar) {
+                                                                  //   const urlArr = user.avatar.split("/");
+                                                                  //   const imageName = urlArr[urlArr.length - 1].split(".")[0];
+                                                                  //   await cloudinary.uploader.destroy(imageName);
+                                                                  // }
+
+//         const upload = await uploadImageClodinary(image)
+        
+//         const updateUser = await UserModel.findByIdAndUpdate(userId,{
+//             avatar : upload.url
+//         })
+
+//         return response.json({
+//             message : "upload profile",
+//             success : true,
+//             error : false,
+//             data : {
+//                 _id : userId,
+//                 avatar : upload.url
+//             }
+//         })
+
+//     } catch (error) {
+//         return response.status(500).json({
+//             message : error.message || error,
+//             error : true,
+//             success : false
+//         })
+//     }
+// }

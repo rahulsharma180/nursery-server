@@ -27,10 +27,10 @@ const userSchema = mongoose.Schema(
       default: null,
     },
 
-    access_token: {
-        type: String,
-        default: ''
-    },
+    // access_token: {
+    //     type: String,
+    //     default: ''
+    // },
     refresh_token: {
         type: String,
         default: ""
