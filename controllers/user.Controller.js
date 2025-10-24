@@ -250,6 +250,13 @@ export async function loginController(req, res) {
     await userModel.findByIdAndUpdate(user._id, {
       last_login_date: new Date(),
     });
+    // const now = new Date();
+    //     const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+    //   await userModel.findByIdAndUpdate(user._id, {
+    //           last_login_date: istTime,
+    // });
+
+    
 
     const cookieOptions = {
       httpOnly: true,
