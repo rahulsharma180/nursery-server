@@ -556,3 +556,29 @@ export async function updateUserDetails(request, response) {
   }
 
 }
+
+export async function forgetPasswordController(request,response){
+try {
+  const {email} = request.body;
+
+    const userExist =  await userModel.findById({email});
+      if(!userExist){
+        return response.status(400).json({
+                message: "Email not available",
+                error: true,
+                success: false
+            }); }
+
+
+              
+} catch (error) {
+  
+return response.status(500).json({
+            message: error.message || "Something went wrong",
+            error: true,
+            success: false
+        });
+    }
+  
+
+}
