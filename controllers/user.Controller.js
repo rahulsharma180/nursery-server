@@ -557,28 +557,90 @@ export async function updateUserDetails(request, response) {
 
 }
 
-export async function forgetPasswordController(request,response){
-try {
-  const {email} = request.body;
+export async function forgotPasswordController(request, response) {
+  try {
+    const { email } = request.body;
 
-    const userExist =  await userModel.findById({email});
-      if(!userExist){
-        return response.status(400).json({
-                message: "Email not available",
-                error: true,
-                success: false
-            }); }
-
-
-              
-} catch (error) {
-  
-return response.status(500).json({
-            message: error.message || "Something went wrong",
-            error: true,
-            success: false
-        });
+    const userExist = await userModel.findOne({ email });
+    if (!userExist) {
+      return response.status(400).json({
+        message: "Email not available",
+        error: true,
+        success: false
+      });
     }
-  
+    else {
+      const verifyCode = Math.floor(100000. + Math.random() * 900000).toString();
+
+      const user = userExist
+
+      user.forgot_password_otp= verifyCode;
+      user.forgot_password_expiry= Date.now() + 600000, // 10 minutes validity
+        await user.save(); //Tab use karte hain jab aapke paas model ka object hai aur usko modify karna hai
+
+      //   user.otp = verifyCode;
+      //   user.otpExpires = Date.now() + 600000; 
+
+      // ⚠️ Ye lines intentionally comment ki gayi hain:
+      // user.otp = verifyCode;
+      // user.otpExpires = Date.now() + 600000;
+      // 👉 Reason:
+      // Ye fields (otp, otpExpires) signup/email verification ke liye hoti hain.
+      // Agar inhe forgot password ke liye bhi use karenge to OTP conflict ho sakta hai —
+      // matlab ek process ka OTP dusre process me galti se verify ho jayega.
+      //
+      // 🧠 Example:
+      // Dono (email verify OTP `user.otp` aur forgot password OTP `user.otp`) 
+      // agar ek hi field me store honge, to system confuse ho sakta hai —
+      // jaise galat OTP verify ho jana.
+      //
+      // ✅ Isliye humne forgot password ke liye alag fields banayi hain:
+      // 'forgot_password_otp' aur 'forgot_password_expiry'
+
+
+      console.log(user._id);
+
+      // ✅ Hum yahan 'findByIdAndUpdate()' ka use kar rahe hain instead of 'user.save()'
+      // Kyunki:
+      // 1️⃣ findByIdAndUpdate direct database me ek specific field update karta hai (fast & atomic)
+      // 2️⃣ user.save() poori document ko reload karke save karta hai — unnecessary overhead hota hai
+      // 3️⃣ Is case me hume sirf OTP aur expiry update karni hai, isliye direct update best option hai
+
+            // const expireTime = new Date() + 60 * 60 * 1000 // 1hr ye string m save hoga
+
+
+      // await userModel.findByIdAndUpdate(user._id, {
+      //   forgot_password_otp: verifyCode,
+      //   // forgot_password_expiry : new Date(expireTime).toISOString()
+      //   forgot_password_expiry: Date.now() + 600000, // 10 minutes validity
+      // })
+
+      
+
+      await sendEmailFun({
+        sendTo: email,
+        subject: 'Verify OTP from EcommerceMERNApp',
+        text: '',
+        html: verificationEmail(user.name, verifyCode)
+      });
+
+      return response.json({
+        message: 'Check your email',
+        error: false,
+        success: true
+      });
+    }
+
+
+
+  } catch (error) {
+
+    return response.status(500).json({
+      message: error.message || "Something went wrong",
+      error: true,
+      success: false
+    });
+  }
+
 
 }

@@ -79,14 +79,14 @@ const userSchema = mongoose.Schema(
         type: Date,
         default: null
     },
-    //  forgot_password_otp: {
-    //     type: String,
-    //     default: null
-    // },
-    // forgot_password_expiry: {
-    //     type: Date,
-    //     default: null
-    // },
+      forgot_password_otp: {
+          type: String,
+          default: null
+      },
+      forgot_password_expiry: {
+          type: Date,
+          default: null
+      },
     role: {
       type: String,
 
