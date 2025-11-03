@@ -644,3 +644,24 @@ export async function forgotPasswordController(request, response) {
 
 
 }
+
+export async function verifyForgotPasswordOtp(request,response) {
+  try {
+    
+      const{email,otp} = request.body;
+      if(!email || !otp){
+        return response.status(400).json({
+          message:"Provide required feilds: emails, otp.",
+          error : true,
+          success : false
+        });
+      }
+
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false
+    })
+  }
+}
