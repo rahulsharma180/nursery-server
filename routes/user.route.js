@@ -9,6 +9,9 @@ import {
   
   verifyEmailController,
   verifyForgotPasswordOtp,
+  resetPassword,
+  refreshToken,
+  userDetails,
 } from '../controllers/user.Controller.js';
 import auth from "../middlewares/auth.js";
 import upload from "../middlewares/multer.js";
@@ -23,7 +26,9 @@ userRouter.put('/user-avatar',auth,upload.array('avatar'), userAvatarController)
 userRouter.put('/:id',auth,updateUserDetails)
 userRouter.post('/forgot-password',forgotPasswordController)
 userRouter.post('/verify-forgot-password-otp',verifyForgotPasswordOtp)
-
+userRouter.post('/reset-password',resetPassword)
+userRouter.put('/refresh-token',refreshToken)
+userRouter.get('/user-details',auth,userDetails)
 
 
 
