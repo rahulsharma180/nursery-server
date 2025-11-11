@@ -1,4 +1,4 @@
-import CategoryModel from "../models/category.model";
+import CategoryModel from "../models/category.model.js";
 import  { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
 
@@ -18,15 +18,38 @@ var imagesArr = [];
 export async function uploadImages(request , response) {
     try {
         
-    } catch (error) {
-        response.status(400).json(
+        const images = request.files;
 
-            {
-                message : error.status || error,
-                error : "true",
-                success : false
-            }
-        )
+          const options = {
+            use_filename: true,
+            unique_filename: false,
+            overwrite: false
+        };
+
+        // upload new images
+        for(let i = 0; i < (images?.length||0); i++){
+
+            const uploadResult = await cloudinary.uploader.upload(images[i].path, options);
+            console.log(uploadResult + "dgfdg")
+            imagesArr.push(uploadResult.secure_url)
+
+
+            // Delete file from local uploads folder
+            fs.unlinkSync(`uploads/${images[i].filename}`);
+        }
+
+             return response.status(200).json({
+            images : imagesArr
+        });
+
+
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || error,
+            error: true,
+            success: false
+        });
 
     }
 

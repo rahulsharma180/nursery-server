@@ -12,7 +12,7 @@ import {
   resetPassword,
   refreshToken,
   userDetails,
-} from '../controllers/user.Controller.js';
+} from '../controllers/user.controller.js';
 import auth from "../middlewares/auth.js";
 import upload from "../middlewares/multer.js";
  

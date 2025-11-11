@@ -9,6 +9,7 @@ import morgan from 'morgan'
 import helmet from 'helmet'
 import connectDB from "./config/connectDB.js";
 import userRouter from "./routes/user.route.js";
+import categoryRouter from "./routes/category.route.js";
 
 // const PORT = process.env.PORT
 
@@ -33,6 +34,8 @@ app.get("/",(request,response)=>{
 
 
 app.use('/api/user',userRouter)
+app.use('/api/category',categoryRouter)
+
 
 
 connectDB().then(()=>{
