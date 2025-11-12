@@ -54,3 +54,35 @@ export async function uploadImages(request , response) {
     }
 
 }
+
+
+// create category
+export async function createCategory(request, response) {
+    try {
+        let category = new CategoryModel({
+            name: request.body.name,
+            images: imagesArr,
+            parentId: request.body.parentId,
+            parentCatName: request.body.parentCatName,
+        });
+
+        category = await category.save();
+
+        // reset images array after saving
+        imagesArr = [];
+
+        return response.status(201).json({
+            message: 'Category created',
+            error: false,
+            success: true,
+            category: category
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || error,
+            error: true,
+            success: false
+        });
+    }
+}
