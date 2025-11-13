@@ -1,33 +1,34 @@
 import CategoryModel from "../models/category.model.js";
-import  { v2 as cloudinary } from 'cloudinary';
+import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
+import mongoose from "mongoose";
 
 
 // Configuration
-cloudinary.config({ 
-    cloud_name: process.env.cloudinary_Config_Cloud_Name, 
-    api_key: process.env.cloudinary_Config_api_key, 
-    api_secret: process.env.cloudinary_Config_api_secret, 
-    secure : true,
+cloudinary.config({
+    cloud_name: process.env.cloudinary_Config_Cloud_Name,
+    api_key: process.env.cloudinary_Config_api_key,
+    api_secret: process.env.cloudinary_Config_api_secret,
+    secure: true,
 });
 
 //Image upload
 var imagesArr = [];
 
 
-export async function uploadImages(request , response) {
+export async function uploadImages(request, response) {
     try {
-        
+
         const images = request.files;
 
-          const options = {
+        const options = {
             use_filename: true,
             unique_filename: false,
             overwrite: false
         };
 
         // upload new images
-        for(let i = 0; i < (images?.length||0); i++){
+        for (let i = 0; i < (images?.length || 0); i++) {
 
             const uploadResult = await cloudinary.uploader.upload(images[i].path, options);
             console.log(uploadResult + "dgfdg")
@@ -38,8 +39,8 @@ export async function uploadImages(request , response) {
             fs.unlinkSync(`uploads/${images[i].filename}`);
         }
 
-             return response.status(200).json({
-            images : imagesArr
+        return response.status(200).json({
+            images: imagesArr
         });
 
 
@@ -56,22 +57,23 @@ export async function uploadImages(request , response) {
 }
 
 
-// create category
+// create Category
+
 export async function createCategory(request, response) {
+
     try {
+
         let category = new CategoryModel({
-            name: request.body.name,
+            name: request.body.name, 
             images: imagesArr,
             parentId: request.body.parentId,
             parentCatName: request.body.parentCatName,
         });
-
+ 
         category = await category.save();
 
-        // reset images array after saving
         imagesArr = [];
-
-        return response.status(201).json({
+     return response.status(201).json({
             message: 'Category created',
             error: false,
             success: true,

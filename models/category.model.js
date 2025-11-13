@@ -12,11 +12,14 @@ const categorySchema = new mongoose.Schema(
                 type: String,
             }
         ],
-        parentCatName: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Category",
-            default: null
-        },
+         parentCatName: {
+      type: String,
+    },
+    parentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      default: null,
+    },
     },
   {
     timestamps: true,
