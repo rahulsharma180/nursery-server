@@ -88,3 +88,6 @@ export async function createCategory(request, response) {
         });
     }
 }
+
+// get sub category count
+export async function getSubCategoriesCount(request, response) {}
