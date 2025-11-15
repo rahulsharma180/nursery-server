@@ -1,5 +1,6 @@
 import CategoryModel from "../models/category.model.js";
 import { v2 as cloudinary } from 'cloudinary';
+import { error } from "console";
 import fs from 'fs';
 import mongoose from "mongoose";
 
@@ -64,30 +65,73 @@ export async function createCategory(request, response) {
     try {
 
         let category = new CategoryModel({
-            name: request.body.name, 
-            images: imagesArr,
-            parentId: request.body.parentId,
+            name: request.body.name,
+            images : imagesArr,
             parentCatName: request.body.parentCatName,
+            parentId: request.body.parentId
         });
- 
+
         category = await category.save();
 
-        imagesArr = [];
-     return response.status(201).json({
-            message: 'Category created',
+        // reset images array after saving
+        imagesArr=[];
+
+        return response.status(201).json({
+            message:'Category created',
             error: false,
             success: true,
             category: category
         });
 
+        
     } catch (error) {
+
         return response.status(500).json({
-            message: error.message || error,
-            error: true,
-            success: false
+            message:error.message||error,
+            error:true,
+            success:false
         });
+        
     }
+   
 }
 
-// get sub category count
-export async function getSubCategoriesCount(request, response) {}
+// get category
+
+export async function getCategory(request,response) {
+    try {
+        
+        const categories = await CategoryModel.find();
+
+       
+
+    } catch (error) {
+
+        return response.status(500).json({
+
+            message : error.message || error,
+            error : true,
+            success: false
+
+        })
+        
+    }
+    
+} 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
