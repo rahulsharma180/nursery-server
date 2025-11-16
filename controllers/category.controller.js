@@ -104,6 +104,12 @@ export async function getCategory(request,response) {
         const categories = await CategoryModel.find();
 
        
+        const categoryMap = {}; 
+
+        categories.forEach(cat=>{
+            categoryMap[cat._id] = {...cat._doc, children:[]}
+
+        })
 
     } catch (error) {
 
