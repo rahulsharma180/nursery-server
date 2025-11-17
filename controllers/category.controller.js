@@ -110,6 +110,9 @@ export async function getCategory(request,response) {
             categoryMap[cat._id] = {...cat._doc, children:[]}
 
         })
+        
+                const rootCategories = [];
+
 
     } catch (error) {
 
