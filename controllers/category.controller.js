@@ -66,7 +66,7 @@ export async function createCategory(request, response) {
 
         let category = new CategoryModel({
             name: request.body.name,
-            images : imagesArr,
+            images: imagesArr,
             parentCatName: request.body.parentCatName,
             parentId: request.body.parentId
         });
@@ -74,59 +74,65 @@ export async function createCategory(request, response) {
         category = await category.save();
 
         // reset images array after saving
-        imagesArr=[];
+        imagesArr = [];
 
         return response.status(201).json({
-            message:'Category created',
+            message: 'Category created',
             error: false,
             success: true,
             category: category
         });
 
-        
+
     } catch (error) {
 
         return response.status(500).json({
-            message:error.message||error,
-            error:true,
-            success:false
+            message: error.message || error,
+            error: true,
+            success: false
         });
-        
+
     }
-   
+
 }
 
 // get category
 
-export async function getCategory(request,response) {
+export async function getCategory(request, response) {
     try {
-        
+
         const categories = await CategoryModel.find();
 
-       
-        const categoryMap = {}; 
 
-        categories.forEach(cat=>{
-            categoryMap[cat._id] = {...cat._doc, children:[]}
+        const categoryMap = {};
+
+        categories.forEach(cat => {
+            categoryMap[cat._id] = { ...cat._doc, children: [] }
 
         })
-        
-                const rootCategories = [];
 
+        const rootCategories = [];
+        categories.forEach(cat => {
+            if (cat.parentId) {
+                categoryMap[cat.parentId].children.push(categoryMap[cat._id]);
+            } else {
+                rootCategories.push(categoryMap[cat._id]);
+            }
+        });
 
     } catch (error) {
 
         return response.status(500).json({
 
-            message : error.message || error,
-            error : true,
+            message: error.message || error,
+            error: true,
             success: false
 
         })
-        
+
     }
-    
-} 
+
+}
 
 
 
@@ -143,4 +149,3 @@ export async function getCategory(request,response) {
 
 
 
- 
