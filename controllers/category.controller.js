@@ -120,6 +120,14 @@ export async function getCategory(request, response) {
             }
         });
 
+          return response.status(200).json({
+            message: '',
+            error: false,
+            success: true,
+            dta : rootCategories
+        });
+
+
     } catch (error) {
 
         return response.status(500).json({
