@@ -142,7 +142,11 @@ export async function getCategory(request, response) {
 
 }
 
+//get category count
+export async function getCategoriesCount(request, response){
 
+    
+}
 
 
 
