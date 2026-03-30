@@ -149,7 +149,7 @@ export async function getCategoriesCount(request, response){
 
          const categoryCount = await CategoryModel.countDocuments({ parentId : undefined});
         if(!categoryCount){
-            response.satus(500).json({
+            response.status(500).json({
                 success : false,
                 error: true
             })
@@ -169,6 +169,33 @@ export async function getCategoriesCount(request, response){
 
 
 
+//get Subcategory count
+//get sub category count
+export async function getSubCategoriesCount(request, response) {
+  try {
+    const categories = await CategoryModel.find();
+    if (!categories) {
+      response.status(500).json({ success: false, error: true });
+    } else {
+      const subCatList = [];
+      for (let cat of categories) {
+        if (cat.parentId !== null && cat.parentId !== undefined) {
+          subCatList.push(cat);
+        }
+      }
+
+      response.send({
+        SubCategoryCount: subCatList.length,
+      });
+    }
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
+}
 
 
 
