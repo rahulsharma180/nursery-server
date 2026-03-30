@@ -18,7 +18,7 @@ import upload from "../middlewares/multer.js";
  
 
 const userRouter = Router();
-userRouter.post('/register', registerUserController);
+userRouter.post('/register', registerUserController); 
 userRouter.post('/verifyEmail', verifyEmailController);
 userRouter.post('/login', loginController);
 userRouter.get('/logout',auth, logoutController)
