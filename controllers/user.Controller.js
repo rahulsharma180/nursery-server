@@ -521,7 +521,7 @@ export async function updateUserDetails(request, response) {
 
         otpExpires: verifyCode ? Date.now() + 600000 : null,
       },
-      { new: true }
+      { new: true }  // ← ye nahi diya toh purana data return hoga, updated data nahi milega
     );
     if (email && email !== userExist.email) {
       // send verification email
