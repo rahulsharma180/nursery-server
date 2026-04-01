@@ -186,12 +186,17 @@ export async function getCategoriesCount(request, response){
     //   response.send({
     //     SubCategoryCount: subCatList.length,
     //   });
-    const SubCategoryCount = await CategoryModel.countDocuments({parentId: null });
+    const subCategoryCount = await CategoryModel.countDocuments({parentId: { $exists: true, $ne: null } });
  
-      response.send({
-        SubCategoryCount: SubCategoryCount
-      });
-    
+    //   response.send({
+    //     subCategoryCount: subCategoryCount
+    //   });
+     return response.status(200).json({
+      subCategoryCount: subCategoryCount,
+      message: "Sub category count fetched successfully",
+      error: false,
+      success: true,
+    });
     
      
     // }
@@ -202,6 +207,36 @@ export async function getCategoriesCount(request, response){
       success: false,
     });
   }
+}
+
+// get single subCategory
+
+
+export async function getCategory(request, response) {
+ try {
+     const category = await CategoryModel.countDocuments(request.params.id);
+    if (!category){
+        response.status(500).json({
+            message : "The category with the given ID was not found.",
+            error : true,
+            succes : false,
+        });
+    }
+
+        
+    return response.status(200).json({
+      error: false,
+      success: true,
+      category: category,
+    });
+    }catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
+
 }
 
 

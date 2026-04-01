@@ -10,6 +10,7 @@ categoryRouter.post('/create',auth,createCategory)
 categoryRouter.get('/', getCategory)
 categoryRouter.get('/get/count', getCategoriesCount)
 categoryRouter.get('/get/subcategories/count', getSubCategoriesCount)
+categoryRouter.get("/:id", getCategory);
 
 
 
