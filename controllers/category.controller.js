@@ -96,9 +96,9 @@ export async function createCategory(request, response) {
 
 }
 
-// get category
+// get Categories
 
-export async function getCategory(request, response) {
+export async function getCategories(request, response) {
     try {
 
         const categories = await CategoryModel.find();
@@ -209,35 +209,36 @@ export async function getCategoriesCount(request, response){
   }
 }
 
-// get single subCategory
+// get single Category
 
 
-// export async function getCategory(request, response) {
-//  try {
-//      const category = await CategoryModel.countDocuments(request.params.id);
-//     if (!category){
-//         response.status(500).json({
-//             message : "The category with the given ID was not found.",
-//             error : true,
-//             succes : false,
-//         });
-//     }
+export async function getCategory(request, response) {
+ try {
+     const category = await CategoryModel.findById(request.params.id);
+     
+    if (!category){
+        response.status(500).json({
+            message : "The category with the given ID was not found.",
+            error : true,
+            succes : false,
+        });
+    }
 
         
-//     return response.status(200).json({
-//       error: false,
-//       success: true,
-//       category: category,
-//     });
-//     }catch (error) {
-//     return response.status(500).json({
-//       message: error.message || error,
-//       error: true,
-//       success: false,
-//     });
-//   }
+    return response.status(200).json({
+      error: false,
+      success: true,
+      category: category,
+    });
+    }catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
 
-// }
+}
 
 
 
