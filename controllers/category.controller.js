@@ -1,6 +1,6 @@
 import CategoryModel from "../models/category.model.js";
 import { v2 as cloudinary } from 'cloudinary';
-import { error } from "console";
+import { error, log } from "console";
 import fs from 'fs';
 import mongoose from "mongoose";
 
@@ -241,6 +241,42 @@ export async function getCategory(request, response) {
 }
 
 
+
+export async function removeImageFromCloudinary(request, response) {
+  const imgUrl = request.query.img;
+
+  console.log(request);
+  
+
+       if (!imgUrl) {
+      return response.status(400).json({
+        success: false,
+        message: "Image URL is required",
+      });
+    }
+
+  const urlArr = imgUrl.split("/");
+  const image = urlArr[urlArr.length - 1];
+
+  const imageName = image.split(".")[0];
+
+          if (!imageName) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid image URL",
+      });
+    }
+
+  if (imageName) {
+    const res = await cloudinary.uploader.destroy(
+      imageName
+    );
+
+    if (res) {
+      response.status(200).send(res);
+    }
+  }
+}
 
 
 
