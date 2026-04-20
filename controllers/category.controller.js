@@ -14,10 +14,11 @@ cloudinary.config({
 });
 
 //Image upload
-var imagesArr = [];
+// var imagesArr = [];
 
 
 export async function uploadImages(request, response) {
+    const imagesArr = [];
     try {
 
         const images = request.files;
@@ -124,7 +125,7 @@ export async function getCategories(request, response) {
             message: '',
             error: false,
             success: true,
-            dta : rootCategories
+            data : rootCategories
         });
 
 
@@ -147,7 +148,7 @@ export async function getCategoriesCount(request, response){
 
     try {
 
-         const categoryCount = await CategoryModel.countDocuments({ parentId : undefined});
+         const categoryCount = await CategoryModel.countDocuments({ parentId : null });
         if(!categoryCount){
             response.status(500).json({
                 success : false,
@@ -217,7 +218,7 @@ export async function getCategory(request, response) {
      const category = await CategoryModel.findById(request.params.id);
      
     if (!category){
-        response.status(500).json({
+       return  response.status(500).json({
             message : "The category with the given ID was not found.",
             error : true,
             succes : false,
@@ -243,38 +244,45 @@ export async function getCategory(request, response) {
 
 
 export async function removeImageFromCloudinary(request, response) {
-  const imgUrl = request.query.img;
+  try {
+    const imgUrl = request.query.img;
 
-  console.log(request);
-  
-
-       if (!imgUrl) {
+    // Validation
+    if (!imgUrl) {
       return response.status(400).json({
         success: false,
         message: "Image URL is required",
       });
     }
 
-  const urlArr = imgUrl.split("/");
-  const image = urlArr[urlArr.length - 1];
+    // URL se public_id nikalo
+    const urlArr = imgUrl.split("/");
+    const image = urlArr[urlArr.length - 1];
+    const imageName = image.split(".")[0];
 
-  const imageName = image.split(".")[0];
-
-          if (!imageName) {
-      return res.status(400).json({
+    // Validation
+    if (!imageName) {
+      return response.status(400).json({
         success: false,
         message: "Invalid image URL",
       });
     }
+            console.log(imageName);
+            
+    // Cloudinary se delete karo
+    const result = await cloudinary.uploader.destroy(imageName);
 
-  if (imageName) {
-    const res = await cloudinary.uploader.destroy(
-      imageName
-    );
+    return response.status(200).json({
+      success: true,
+      message: "Image deleted successfully",
+      result: result,
+    });
 
-    if (res) {
-      response.status(200).send(res);
-    }
+  } catch (error) {
+    return response.status(500).json({
+      success: false,
+      message: error.message || error,
+    });
   }
 }
 
