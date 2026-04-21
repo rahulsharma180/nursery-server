@@ -23,7 +23,7 @@ userRouter.post('/verifyEmail', verifyEmailController);
 userRouter.post('/login', loginController);
 userRouter.get('/logout',auth, logoutController)
 userRouter.put('/user-avatar',auth,upload.array('avatar'), userAvatarController)
-userRouter.put('/:id',auth,updateUserDetails)
+userRouter.put('/updateUser',auth,updateUserDetails)
 userRouter.post('/forgot-password',forgotPasswordController)
 userRouter.post('/verify-forgot-password-otp',verifyForgotPasswordOtp)
 userRouter.post('/reset-password',resetPassword)

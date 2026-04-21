@@ -11,6 +11,7 @@ import generateRefreshToken from '../utils/generateRefreshToken.js';
 
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
+import generateResetToken from '../utils/generateResetToken.js';
 
 // Configuration
 cloudinary.config({
@@ -57,7 +58,7 @@ const registerUserController = async (req, res) => {
 
     // validateing email and password
     if (!validator.isEmail(email)) {
-        return res.json({ success: false, message: "Please Enter a valid E-mail" })
+      return res.json({ success: false, message: "Please Enter a valid E-mail" })
     }
 
     if (password.length < 8) {
@@ -108,11 +109,11 @@ const registerUserController = async (req, res) => {
     } catch (err) {
       console.log('Email send failed:', err.message);
       console.error("Email failed:", err.message);
-  await userModel.findByIdAndDelete(newUser._id);
-  return res.status(500).json({
-    success: false,
-    message: "Registration failed — unable to send verification email.",
-  });
+      await userModel.findByIdAndDelete(newUser._id);
+      return res.status(500).json({
+        success: false,
+        message: "Registration failed — unable to send verification email.",
+      });
     }
 
     // // Create JWT unused 
@@ -166,7 +167,10 @@ export async function verifyEmailController(req, res) {
       });
     }
 
-    const isCodeValid = user.otp === otp;
+    const isCodeValid = await bcryptjs.compare(otp, user.otp);
+
+
+    // const isCodeValid = user.otp === otp;
     const isNotExpired = user.otpExpires > Date.now();
 
     if (isCodeValid && isNotExpired) {
@@ -484,47 +488,135 @@ export async function removeImageFromClodinary(request, response) {
   }
 }
 
+// export async function updateUserDetails(request, response) {
+//   try {
+//     const userId = request.userId; // from auth middleware
+//     const { name, email, mobile, password } = request.body;
+
+//     const userExist = await userModel.findById(userId);
+//     if (!userExist) {
+//       return response.status(400).send('The user cannot be updated!');
+//     }
+
+//     let verifyCode = null;
+
+//     if (email && email !== userExist.email) {
+//       verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
+//     }
+
+//     let hashPassword;
+//     if (password) {
+//       const salt = await bcryptjs.genSalt(10);
+//       hashPassword = await bcryptjs.hash(password, salt);
+//     } else {
+//       hashPassword = userExist.password;
+//     }
+
+//     const updateUser = await userModel.findByIdAndUpdate(
+//       userId,
+//       {
+//         name: name,
+//         mobile: mobile,
+//         email: email,
+//         verify_email: email !== userExist.email ? false : true,
+//         password: hashPassword,
+//         otp: verifyCode ? verifyCode : null,
+//         // otp: verifyCode!=="" ? verifyCode : null,
+
+//         otpExpires: verifyCode ? Date.now() + 600000 : null,
+//       },
+//       { new: true }  // ← ye nahi diya toh purana data return hoga, updated data nahi milega
+//     );
+//     if (email && email !== userExist.email) {
+//       // send verification email
+//       await sendEmailFun({
+//         sendTo: email,
+//         subject: 'Verify email from EcommerceMERNApp',
+//         text: '',
+//         html: verificationEmail(name, verifyCode),
+//       });
+//     }
+//     return response.json({
+//       message: 'User updated successfully',
+//       error: false,
+//       success: true,
+//       user: updateUser,
+//     });
+//   } catch (error) {
+//     return response.status(500).json({
+//       message: error.message || error,
+//       error: true,
+//       success: false,
+//     });
+//   }
+// }
+
 export async function updateUserDetails(request, response) {
   try {
-    const userId = request.userId; // from auth middleware
+    // const userId =request.params.id; // from auth middleware const userId
+    const userId = request.userId; // ← Auth middleware se aata hai
+
+
+    // ✅ Pehle check karo userId hai bhi ya nahi
+    if (!userId) {
+      return response.status(401).json({
+        message: "Unauthorized - Please login first",
+        error: true,
+        success: false
+      });
+    }
+
     const { name, email, mobile, password } = request.body;
 
     const userExist = await userModel.findById(userId);
     if (!userExist) {
-      return response.status(400).send('The user cannot be updated!');
+      return response.status(404).json({
+        message: "User not found",
+        error: true,
+        success: false
+      });
     }
 
-    let verifyCode = null;
+    // Sirf jo fields aayi hain woh update karo
+    const updateFields = {};
+    if (name) updateFields.name = name;
+    if (mobile) updateFields.mobile = mobile;
 
+    // Password change handling
+    if (password) {
+      const isSame = await bcryptjs.compare(password, userExist.password);
+      if (isSame) {
+        return response.status(400).json({
+          message: "New password cannot be same as old password",
+          error: true,
+          success: false
+        });
+      }
+      const salt = await bcryptjs.genSalt(10);
+      updateFields.password = await bcryptjs.hash(password, salt);
+    }
+
+    // Email change handling
+    let verifyCode = null;
     if (email && email !== userExist.email) {
       verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
-    }
-
-    let hashPassword;
-    if (password) {
+      updateFields.email = email;
+      updateFields.verify_email = false;  // ✅ Sirf tab false hoga jab email change ho
+      // updateFields.otp = verifyCode;
       const salt = await bcryptjs.genSalt(10);
-      hashPassword = await bcryptjs.hash(password, salt);
-    } else {
-      hashPassword = userExist.password;
+      updateFields.otp = await bcryptjs.hash(verifyCode, salt);
+      updateFields.otpExpires = Date.now() + 600000;
     }
+    // ✅ verify_email ko touch hi nahi kiya agar email nahi badli
 
     const updateUser = await userModel.findByIdAndUpdate(
       userId,
-      {
-        name: name,
-        mobile: mobile,
-        email: email,
-        verify_email: email !== userExist.email ? false : true,
-        password: hashPassword,
-        otp: verifyCode ? verifyCode : null,
-        // otp: verifyCode!=="" ? verifyCode : null,
-
-        otpExpires: verifyCode ? Date.now() + 600000 : null,
-      },
-      { new: true }  // ← ye nahi diya toh purana data return hoga, updated data nahi milega
+      updateFields,
+      { new: true }
     );
-    if (email && email !== userExist.email) {
-      // send verification email
+
+    // Verification email bhejo
+    if (verifyCode) {
       await sendEmailFun({
         sendTo: email,
         subject: 'Verify email from EcommerceMERNApp',
@@ -532,12 +624,17 @@ export async function updateUserDetails(request, response) {
         html: verificationEmail(name, verifyCode),
       });
     }
+
+    // Sensitive data remove karo response se
+    const { password: pass, otp, ...safeUser } = updateUser._doc;
+
     return response.json({
       message: 'User updated successfully',
       error: false,
       success: true,
-      user: updateUser,
+      user: safeUser,
     });
+
   } catch (error) {
     return response.status(500).json({
       message: error.message || error,
@@ -563,7 +660,9 @@ export async function forgotPasswordController(request, response) {
 
       const user = userExist;
 
-      user.forgot_password_otp = verifyCode;
+      const salt = await bcryptjs.genSalt(10);
+      user.forgot_password_otp = await bcryptjs.hash(verifyCode, salt);
+      // user.forgot_password_otp = verifyCode;
       (user.forgot_password_expiry = Date.now() + 600000), // 10 minutes validity
         await user.save(); //Tab use karte hain jab aapke paas model ka object hai aur usko modify karna hai
 
@@ -636,79 +735,92 @@ export async function verifyForgotPasswordOtp(request, response) {
       });
     }
 
-     const user = await userModel.findOne({email})
+    const user = await userModel.findOne({ email })
 
-      if(!user){
-        return response.status(400).json({
-          message: "Email not Available",
-          error : true,
-          success : false
-        })
-      }
+    if (!user) {
+      return response.status(400).json({
+        message: "Email not Available",
+        error: true,
+        success: false
+      })
+    }
 
-      //  const currentTime = new Date().toISOString()
+    //  const currentTime = new Date().toISOString()
 
-      //   if(user.forgot_password_expiry < currentTime  ){
-      //       return response.status(400).json({
-      //           message : "Otp is expired",
-      //           error : true,
-      //           success : false
-      //       })
-      //   }
+    //   if(user.forgot_password_expiry < currentTime  ){
+    //       return response.status(400).json({
+    //           message : "Otp is expired",
+    //           error : true,
+    //           success : false
+    //       })
+    //   }
 
-      if(user.forgot_password_expiry < Date.now()){
-        return response.status(400).json({
-          message: "Otp is Expired",
-          error : true,
-          success : false
-        })
-      }
+    if (user.forgot_password_expiry < Date.now()) {
+      return response.status(400).json({
+        message: "Otp is Expired",
+        error: true,
+        success: false
+      })
+    }
+    const isOtpValid = await bcryptjs.compare(otp.trim(), user.forgot_password_otp);
+    //🧠 otp.trim() kya karta hai? 👉 trim() ek JavaScript string method hai 
+    // jo kisi string ke aage aur peeche ke space (whitespace) hata deta hai.
+    if (!isOtpValid) {
+      return response.status(400).json({
+        message: "Invaild Otp",
+        error: true,
+        success: false
+      })
+
+    }
+
+    //****************** */ Clear OTP fields after successful verification*************
 
 
-      if(otp.trim()!== user.forgot_password_otp){ //🧠 otp.trim() kya karta hai? 👉 trim() ek JavaScript string method hai
-        return response.status(400).json({         // jo kisi string ke aage aur peeche ke space (whitespace) hata deta hai.
-          message: "Invaild Otp", 
-          error : true,
-          success : false
-        })
+    // user.forgot_password_otp = "";
+    // user.forgot_password_expiry = "";
+    // await user.save();
 
-      }
+    const updateUser = await userModel.findByIdAndUpdate(user?._id, {
+      // forgot_password_otp : "", // isko bhi null kar liya kiu ki defult value null set kiya h module m, string m maja nhi aarh th
+      forgot_password_otp: null,
 
-        //****************** */ Clear OTP fields after successful verification*************
+      // forgot_password_expiry : "",
+      forgot_password_expiry: null, // 👈 clearly null
 
+      // Ab dekho 👇
 
-        // user.forgot_password_otp = "";
-        // user.forgot_password_expiry = "";
-        // await user.save();
+      //   forgot_password_otp → String field hai
+      //   → isme "" (empty string) perfectly valid hai.
 
-     const updateUser = await userModel.findByIdAndUpdate(user?._id,{
-            // forgot_password_otp : "", // isko bhi null kar liya kiu ki defult value null set kiya h module m, string m maja nhi aarh th
-            forgot_password_otp : null, 
+      //   forgot_password_expiry → Date field hai
+      //   → isme "" (empty string) ek invalid date ban jata hai.
+      //   Mongoose usse null me convert kar deta hai automatically.
 
-            // forgot_password_expiry : "",
-           forgot_password_expiry: null, // 👈 clearly null
+      // *****iss liye database mai "" ko null m convert kr rh h**********
 
-          // Ab dekho 👇
-
-          //   forgot_password_otp → String field hai
-          //   → isme "" (empty string) perfectly valid hai.
-
-          //   forgot_password_expiry → Date field hai
-          //   → isme "" (empty string) ek invalid date ban jata hai.
-          //   Mongoose usse null me convert kar deta hai automatically.
-
-          // *****iss liye database mai "" ko null m convert kr rh h**********
-
-        },
+    },
       { new: true }   // 👈 important 👈 return updated user object... ye aagar na likhu to user update to hoga lakin turant hi ye old data return kr dega iss liye ye kiya h taki new data mile
-      );
+    );
 
-      
-        return response.json({
-            message : "OTP verified successfully",
-            error : false,
-            success : true
-        })
+    // OTP valid hai → token banao
+    const resetToken = generateResetToken(user._id, user.email);
+    // Cookie mein save karo
+    response.cookie('resetToken', resetToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Strict',
+      maxAge: 5 * 60 * 1000 // 5 min
+    });
+
+    // Database mein save karna zaroori nahi! ✅
+    // Model se reset_password_token fields bhi hatao
+
+    return response.json({
+      message: "OTP verified successfully",
+      error: false,
+      success: true
+    })
   } catch (error) {
     return response.status(500).json({
       message: error.message || error,
@@ -718,53 +830,143 @@ export async function verifyForgotPasswordOtp(request, response) {
   }
 }
 
+// export async function resetPassword(request, response) {
+//   try {
+
+//     const {email,newPassword,confirmPassword} = request.body;
+
+// // Validation
+//     if(!email || !newPassword || !confirmPassword){
+//       return response.status(400).json({
+//                 message: 'Provide required fields: email, newPassword, confirmPassword',
+//                 error: true,
+//                 success: false
+//             });
+//     }
+
+//     // User exist karta hai?
+//     const user = await userModel.findOne({ email });
+
+//         if (!user) {
+//             return response.status(400).json({
+//                 message: "Email not available",
+//                 error: true,
+//                 success: false
+//             });
+//         }
+
+//     // ✅ OTP verify hua hai ya nahi
+//     if (user.forgot_password_otp || user.forgot_password_expiry) {
+//       return response.status(400).json({
+//         message: "Please verify OTP first",
+//         error: true,
+//         success: false
+//       });
+//     }
+//             // Password match karta hai?
+//         if (newPassword !== confirmPassword) {
+//             return response.status(400).json({
+//                 message: "New password and confirm password must be the same",
+//                 error: true,
+//                 success: false
+//             });
+//         }
+
+
+//     // Same password check
+//     const isSame = await bcryptjs.compare(newPassword, user.password);
+//     if (isSame) {
+//       return response.status(400).json({
+//         message: "New password cannot be same as old password",
+//         error: true,
+//         success: false
+//       });
+//     }
+
+//         const salt = await bcryptjs.genSalt(10);
+//         const hashPassword = await bcryptjs.hash(newPassword, salt);
+
+//           await userModel.findOneAndUpdate(user._id,{
+//             password : hashPassword
+//         });
+//         // user.password = hashPassword;
+//         // await user.save();
+
+//          return response.json({
+//             message: 'Password updated successfully',
+//             error: false,
+//             success: true
+//         });
+
+
+//   } catch (error) {
+//     return response.status(500).json({
+//       message: error.message || error,
+//       error: true,
+//       success: false,
+//     });
+//   }
+// }
+
 export async function resetPassword(request, response) {
   try {
-    
-    const {email,newPassword,confirmPassword} = request.body;
+    const { newPassword, confirmPassword } = request.body;
 
+    // Cookie se lo
+    const resetToken = request.cookies.resetToken;
 
-    if(!email || !newPassword || !confirmPassword){
+    if (!resetToken) {
       return response.status(400).json({
-                message: 'Provide required fields: email, newPassword, confirmPassword',
-                error: true,
-                success: false
-            });
+        message: "Please verify OTP first",
+        error: true,
+        success: false
+      });
     }
 
+    // ✅ JWT verify karo — email bhi mil jaayega token se!
+    const decode = jwt.verify(resetToken, process.env.SECRET_KEY_RESET_PASSWORD);
 
-    const user = await userModel.findOne({ email });
+    if (!decode) {
+      return response.status(400).json({
+        message: "Invalid or expired token",
+        error: true,
+        success: false
+      });
+    }
 
-        if (!user) {
-            return response.status(400).json({
-                message: "Email not available",
-                error: true,
-                success: false
-            });
-        }
-        if (newPassword !== confirmPassword) {
-            return response.status(400).json({
-                message: "New password and confirm password must be the same",
-                error: true,
-                success: false
-            });
-        }
+    // ✅ Email request.body se lena zaroori nahi — token mein hai!
+    const user = await userModel.findById(decode.userId);
+    if (!user) {
+      return response.status(400).json({
+        message: "User not found",
+        error: true,
+        success: false
+      });
+    }
 
-        const salt = await bcryptjs.genSalt(10);
-        const hashPassword = await bcryptjs.hash(newPassword, salt);
+    if (newPassword !== confirmPassword) {
+      return response.status(400).json({
+        message: "Passwords do not match",
+        error: true,
+        success: false
+      });
+    }
 
-          await userModel.findOneAndUpdate(user._id,{
-            password : hashPassword
-        })
-        // user.password = hashPassword;
-        // await user.save();
+    const salt = await bcryptjs.genSalt(10);
+    const hashPassword = await bcryptjs.hash(newPassword, salt);
 
-         return response.json({
-            message: 'Password updated successfully',
-            error: false,
-            success: true
-        });
+    await userModel.findByIdAndUpdate(decode.userId, {
+      password: hashPassword
+    });
 
+    // ✅ Cookie clear karo
+    response.clearCookie('resetToken');
+
+    return response.json({
+      message: 'Password updated successfully',
+      error: false,
+      success: true
+    });
 
   } catch (error) {
     return response.status(500).json({
@@ -777,89 +979,89 @@ export async function resetPassword(request, response) {
 
 //refresh token controller
 export async function refreshToken(request, response) {
-    try {
-        const refreshToken = request.cookies.refreshToken || request?.headers?.authorization?.split(' ')[1] //bearer token
+  try {
+    const refreshToken = request.cookies.refreshToken || request?.headers?.authorization?.split(' ')[1] //bearer token
 
-        if (!refreshToken) {
-            return response.status(401).json({
-                message: 'Invalid token',
-                error: true,
-                success: false
-            })
-        }
-
-        const verifyToken = await jwt.verify(refreshToken, process.env.SECRET_KEY_REFRESH_TOKEN)
-
-        if (!verifyToken) {
-            return response.status(401).json({
-                message: 'token is expired',
-                error: true,
-                success: false
-            })
-        }
-
-        const userId = verifyToken?._id;
-        const newAccessToken = await generateAccessToken(userId)
-        const newRefreshToken = generateRefreshToken(userId);
-
-        const cookiesOption = {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'None'
-        }
-
-        response.cookie('accessToken', newAccessToken, cookiesOption)
-        response.cookie('refreshToken', newRefreshToken, cookiesOption);
-
-        return response.json({
-            message: 'New Access token generated',
-            error: false,
-            success: true,
-            data: {
-                accessToken: newAccessToken,
-                refreshToken: newRefreshToken
-            }
-        })
-
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || "Something went wrong",
-            error: true,
-            success: false
-        });
+    if (!refreshToken) {
+      return response.status(401).json({
+        message: 'Invalid token',
+        error: true,
+        success: false
+      })
     }
+
+    const verifyToken = await jwt.verify(refreshToken, process.env.SECRET_KEY_REFRESH_TOKEN)
+
+    if (!verifyToken) {
+      return response.status(401).json({
+        message: 'token is expired',
+        error: true,
+        success: false
+      })
+    }
+
+    const userId = verifyToken?._id;
+    const newAccessToken = await generateAccessToken(userId)
+    const newRefreshToken = generateRefreshToken(userId);
+
+    const cookiesOption = {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'None'
+    }
+
+    response.cookie('accessToken', newAccessToken, cookiesOption)
+    response.cookie('refreshToken', newRefreshToken, cookiesOption);
+
+    return response.json({
+      message: 'New Access token generated',
+      error: false,
+      success: true,
+      data: {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken
+      }
+    })
+
+
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "Something went wrong",
+      error: true,
+      success: false
+    });
+  }
 }
 
 
 //get login user details
-export async function userDetails(request,response){
-    try {
-        const userId  = request.userId
+export async function userDetails(request, response) {
+  try {
+    const userId = request.userId
 
-        // console.log(userId)
+    // console.log(userId)
 
-        const user = await userModel.findById(userId).select('-password -refresh_token')
+    const user = await userModel.findById(userId).select('-password -refresh_token')
 
-      if (!user) {
-            return response.status(404).json({
-                message: "User not found",
-                error: true,
-                success: false
-            });
-        }
-
-        return response.json({
-            message : 'user details',
-            data : user,
-            error : false,
-            success : true
-        })
-    } catch (error) {
-        return response.status(500).json({
-            message : "Something is wrong",
-            error : true,
-            success : false
-        })
+    if (!user) {
+      return response.status(404).json({
+        message: "User not found",
+        error: true,
+        success: false
+      });
     }
+
+    return response.json({
+      message: 'user details',
+      data: user,
+      error: false,
+      success: true
+    })
+  } catch (error) {
+    return response.status(500).json({
+      message: "Something is wrong",
+      error: true,
+      success: false
+    })
+  }
 }
