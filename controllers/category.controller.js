@@ -256,6 +256,7 @@ export async function removeImageFromCloudinary(request, response) {
 
 export async function updateCategory(request, response) {
   try {
+    const imagesArr = []
     const categoryId = request.params.id;
 
     if (!mongoose.Types.ObjectId.isValid(categoryId)) {
@@ -276,7 +277,7 @@ export async function updateCategory(request, response) {
       { new: true }
     );
 
-    
+    imagesArr = []
 
   } catch (error) {
     return response.status(500).json({
