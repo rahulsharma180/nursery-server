@@ -13,10 +13,10 @@ cloudinary.config({
 });
 
 //Image upload
-// var imagesArr = [];
+  var imagesArr = [];
 
 export async function uploadImages(request, response) {
-  const imagesArr = [];
+   imagesArr = [];
   try {
     const images = request.files;
 
@@ -55,6 +55,8 @@ export async function uploadImages(request, response) {
 
 export async function createCategory(request, response) {
   try {
+     console.log(imagesArr);
+     
     let category = new CategoryModel({
       name: request.body.name,
       images: imagesArr,
@@ -256,8 +258,7 @@ export async function removeImageFromCloudinary(request, response) {
 
 export async function updateCategory(request, response) {
   try {
-    const imagesArr = []
-    const categoryId = request.params.id;
+     const categoryId = request.params.id;
 
     if (!mongoose.Types.ObjectId.isValid(categoryId)) {
       return response.status(400).json({
@@ -269,7 +270,7 @@ export async function updateCategory(request, response) {
 
       {
         name: request.body.name,
-        images: imagesArr,
+        images: imagesArr.length > 0 ? imagesArr[0] : request.body.images,
         parentCatName: request.body.parentCatName,
         parentId: request.body.parentId,
       },

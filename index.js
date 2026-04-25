@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from 'dotenv'
+import dns from 'dns'
+dns.setServers([  '1.1.1.1', '8.8.8.8'])
 dotenv.config()
 // console.log("MONGODB_URI:", process.env.MONGODB_URI);
 
