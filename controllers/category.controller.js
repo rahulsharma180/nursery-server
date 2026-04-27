@@ -280,6 +280,20 @@ export async function updateCategory(request, response) {
 
     imagesArr = []
 
+    if (!updateCategoryData) {
+      return response.status(404).json({
+      message: 'Category not found',  });
+    }
+
+    
+    return response.status(200).json({
+    error: false,
+    success: true,
+    category: updateCategoryData.name,
+    message:  (`Category ${updateCategoryData.name} updated successfully`) || 'Category updated successfully',
+  });
+
+
   } catch (error) {
     return response.status(500).json({
       message: error.message || error,
@@ -287,4 +301,120 @@ export async function updateCategory(request, response) {
       success: false,
     });
   }
+}
+
+
+export async function deleteCategory(request, response) {
+
+try {
+console.log("Received ID:", request.params.id);
+  const category= await CategoryModel.findById(request.params.id);
+
+  if (!category) {
+    return response.status(404).json({
+      message: 'Category not found',
+      error: true,
+      success: false,
+    });
+  }
+
+
+    const categoryId = request.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+    return response.status(400).json({
+      message: 'Invalid category ID',
+    });
+  }
+
+
+  const subCategory = await CategoryModel.find({parentId:categoryId})
+// console.log("SubCategories:", subCategory);
+
+  for (let i = 0; i<subCategory.length; i++) {
+   const thirdcategory =  await CategoryModel.find({parentId:subCategory[i]._id })
+  // console.log(`SubCategory[${i}] ki Third Categories:`, thirdcategory);
+
+    for (let j=0; j<thirdcategory.length; j++){
+      const deletedThirdSubCategory = await CategoryModel.findByIdAndDelete(thirdcategory[j]._id) 
+            // const deletedThirdSubCategory = await CategoryModel.findById(thirdcategory[j]._id) 
+ 
+    // console.log(`Third Category[${j}] Images:`, thirdcategory[j].images);
+
+
+      const deletedThirdSubCategoryImages = deletedThirdSubCategory.images;
+
+      for(let k=0; k<deletedThirdSubCategoryImages.length;k++){
+
+        const urlArr = deletedThirdSubCategoryImages[k].split('/')
+        // const thirdSubCatImage = urlArr
+          // console.log( "deletedThirdSubCategoryImages:rs",urlArr);
+          const thirdSubCatImage = urlArr[urlArr.length - 1]
+          // console.log("thirdSubCatImage: ", thirdSubCatImage);
+          const thirdSubCatImageName = thirdSubCatImage.split('.')[0]
+          // console.log("thirdSubCatImageName: ", thirdSubCatImageName);
+
+            if (thirdSubCatImageName) {
+              await cloudinary.uploader.destroy(thirdSubCatImageName);}
+    
+      }
+
+      console.log("Third deleted Successfully");
+      
+    }
+
+    const deletedSubCategory = await CategoryModel.findByIdAndDelete( subCategory[i]._id)
+
+        const deletedSubCategoryImgaes = deletedSubCategory.images;
+
+        for(let m=0; m<deletedSubCategoryImgaes.length;m++){
+          const urlArr = deletedSubCategoryImgaes[m].split('/')
+          const subCatImage = urlArr[urlArr.length-1]
+          const subCatImageName = subCatImage.split('.')[0]
+
+          if (subCatImageName) {
+            await cloudinary.uploader.destroy(subCatImageName);}
+        }
+
+              console.log("SubCategory deleted Successfully");
+
+
+
+
+  }
+
+ 
+  const deletedCategory = await CategoryModel.findByIdAndDelete(categoryId);
+
+
+
+  
+    const images = deletedCategory.images;
+
+    // Delete images from Cloudinary
+ 
+    for (let i = 0; i < (images?.length || 0); i++) {
+      let img = images[i];
+      const urlArr = img.split('/');
+      const image = urlArr[urlArr.length - 1];
+      const imageName = image.split('.')[0];     
+      if (imageName) {
+              await cloudinary.uploader.destroy(imageName);}
+    } 
+
+                  console.log("Category deleted Successfully");
+
+  return response.status(200).json({
+    message: 'Category deleted successfully',
+    error: false,
+    success: true,
+  });
+} catch (error) {
+  return response.status(500).json({
+    message: error.message || error,
+     error: true,
+    success: false,
+  });
+}
+  
 }
