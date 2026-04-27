@@ -4,6 +4,15 @@ import { error, log } from 'console';
 import fs from 'fs';
 import mongoose from 'mongoose';
 
+
+
+ //---------------------------------------------------------------------------------------------//
+// TODO: Global imagesArr hai — Frontend connect hone ke baad fix karna
+// FIXME: imagesArr hatao, request.body.images use karo
+//--------------------------------------------------------------------------------------------//
+ 
+
+
 // Configuration
 cloudinary.config({
   cloud_name: process.env.cloudinary_Config_Cloud_Name,
