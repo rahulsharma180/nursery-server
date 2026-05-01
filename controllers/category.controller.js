@@ -1,6 +1,5 @@
 import CategoryModel from '../models/category.model.js';
 import { v2 as cloudinary } from 'cloudinary';
-import { error, log } from 'console';
 import fs from 'fs';
 import mongoose from 'mongoose';
 
