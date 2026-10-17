@@ -1,4 +1,4 @@
- import mongoose from "mongoose";
+import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema({
   name: {
@@ -17,9 +17,6 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-
-
-  
   image: [{ type: String, required: true }],
   brand: { type: String, default: "" },
   rating: { type: Number, default: 0 },
@@ -27,11 +24,43 @@ const productSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
- // Optionally, you can remove this if you never need full populate in frontend
-    category: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
-      select: false, // Don't include by default
-    },
-  
+
+  // Store category name (and arabic name) directly for home/listing rendering
+  catId: {
+    type: String,
+    default: "",
+    index: true, // Add index for fast queries
+  },
+
+  catName: {
+    type: String,
+    default: "",
+  },
+
+  subCatId: {
+    type: String,
+    default: "",
+  },
+  subCat: {
+    type: String,
+    default: "",
+  },
+   thirdsubCatId: {
+    type: String,
+    default: "",
+  },
+  thirdsubCat: {
+    type: String,
+    default: "",
+  },
+ 
+
+
+  // Optionally, you can remove this if you never need full populate in frontend
+  category: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Category",
+    select: false, // Don't include by default
+  },
+
 });
